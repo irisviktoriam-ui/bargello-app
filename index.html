@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bargello Quilt Designer</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Source+Sans+3:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f0e8;
+    --panel: #fffdf8;
+    --border: #d4c4a8;
+    --text: #2c2416;
+    --text-light: #7a6a52;
+    --accent: #8b5e3c;
+    --accent2: #586475;
+    --shadow: 0 2px 12px rgba(44,36,22,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Source Sans 3', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  header {
+    background: var(--panel);
+    border-bottom: 2px solid var(--border);
+    padding: 18px 24px 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--accent);
+    letter-spacing: 0.01em;
+  }
+  header span {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    font-weight: 300;
+  }
+  .layout {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  @media (min-width: 900px) {
+    .layout { flex-direction: row; height: calc(100vh - 61px); }
+  }
+
+  /* ---- SIDEBAR ---- */
+  .sidebar {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 20px 18px;
+    overflow-y: auto;
+    width: 100%;
+    flex-shrink: 0;
+  }
+  @media (min-width: 900px) { .sidebar { width: 320px; } }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.95rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 18px 0 10px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-title:first-child { margin-top: 0; }
+
+  label {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--text-light);
+    margin-bottom: 3px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  input[type="number"], input[type="text"], textarea, select {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.9rem;
+    color: var(--text);
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+  input[type="number"]:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  textarea { resize: vertical; min-height: 60px; font-size: 0.82rem; }
+
+  .color-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .color-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .color-row input[type="color"] {
+    width: 36px; height: 28px;
+    padding: 2px; border-radius: 4px;
+    border: 1px solid var(--border);
+    background: none;
+    cursor: pointer;
+    margin: 0;
+    flex-shrink: 0;
+  }
+  .color-row .hex-input {
+    width: 90px;
+    margin: 0;
+    font-size: 0.8rem;
+    padding: 5px 7px;
+  }
+  .color-row button {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    line-height: 1;
+  }
+  .color-row button:hover { background: var(--bg); color: #c0392b; }
+  .color-row .drag-handle {
+    cursor: grab;
+    color: var(--border);
+    font-size: 1.1rem;
+    line-height: 1;
+    user-select: none;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    margin-right: 6px;
+    margin-bottom: 6px;
+    transition: background 0.15s, border-color 0.15s;
+    letter-spacing: 0.02em;
+  }
+  .btn:hover { background: var(--border); }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .btn-primary:hover { background: #6e4a2e; border-color: #6e4a2e; }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .toggle {
+    position: relative;
+    width: 38px; height: 20px;
+    flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0;
+    background: var(--border);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle-slider:before {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    left: 3px; top: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle input:checked + .toggle-slider { background: var(--accent); }
+  .toggle input:checked + .toggle-slider:before { transform: translateX(18px); }
+  .toggle-label { font-size: 0.85rem; color: var(--text); }
+
+  /* ---- CANVAS AREA ---- */
+  .canvas-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  .canvas-toolbar {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .canvas-toolbar .info {
+    font-size: 0.82rem;
+    color: var(--text-light);
+    margin-left: auto;
+  }
+  .canvas-wrap {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 20px;
+  }
+  canvas {
+    display: block;
+    box-shadow: var(--shadow);
+    background: #fff;
+    border: 1px solid var(--border);
+  }
+  .stats {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--panel);
+    font-size: 0.82rem;
+    color: var(--text-light);
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .stats strong { color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Bargello Quilt Designer</h1>
+  <span>Pas parameters aan en zie je quilt direct</span>
+</header>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <div class="section-title">Kleuren</div>
+    <div class="color-list" id="colorList"></div>
+    <button class="btn" onclick="addColor()">+ Kleur toevoegen</button>
+
+    <div class="section-title">Afmetingen</div>
+    <label>Stofbreedte (hoogte per strook, cm)</label>
+    <input type="number" id="stofbreedte" value="4" step="0.5" min="1">
+    <label>Stoflengte (totale breedte quilt, cm)</label>
+    <input type="number" id="stoflengte" value="90" step="1" min="10">
+    <label>Aantal stroken verticaal</label>
+    <input type="number" id="aantalStroken" value="21" step="1" min="2">
+    <label>Aantal ringen (herhaling onder elkaar)</label>
+    <input type="number" id="aantalRingen" value="1" step="1" min="1">
+    <label>Naadtoeslag (cm)</label>
+    <input type="number" id="naadtoeslag" value="0.635" step="0.05" min="0">
+
+    <div class="section-title">Kolom-breedtes</div>
+    <label>Breedtes (kommagescheiden, cm)</label>
+    <textarea id="breedtes">6, 5.5, 5, 4.5, 4, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 6, 5.5, 5, 4.5, 4, 3.5, 3</textarea>
+
+    <div class="section-title">Verschuiving</div>
+    <div class="toggle-row">
+      <label class="toggle">
+        <input type="checkbox" id="gebruikAuto" onchange="toggleAuto()">
+        <span class="toggle-slider"></span>
+      </label>
+      <span class="toggle-label">Automatische golf</span>
+    </div>
+    <div id="manualSection">
+      <label>Handmatige verschuiving (kommagescheiden)</label>
+      <textarea id="verschuiving">0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21</textarea>
+      <label>Startverschuiving (tel op bij alle waarden)</label>
+      <input type="number" id="startVerschuiving" value="2" step="1" min="0">
+    </div>
+
+    <br>
+    <button class="btn btn-primary" onclick="tekenQuilt()">↺ Herteken</button>
+    <button class="btn" onclick="downloadPNG()">⬇ PNG opslaan</button>
+
+  </aside>
+
+  <!-- CANVAS -->
+  <main class="canvas-area">
+    <div class="canvas-toolbar">
+      <span style="font-size:0.85rem; color:var(--text-light)">Zoom:</span>
+      <button class="btn" onclick="zoom(-0.2)">−</button>
+      <button class="btn" onclick="zoom(0.2)">+</button>
+      <button class="btn" onclick="resetZoom()">Reset</button>
+      <span class="info" id="zoomInfo">100%</span>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="quiltCanvas"></canvas>
+    </div>
+    <div class="stats" id="statsBar">
+      <span>Teken de quilt om afmetingen te zien</span>
+    </div>
+  </main>
+</div>
+
+<script>
+// ===== STATE =====
+let kleuren = [
+  "#ca92a9", "#995a4c", "#71312f",
+  "#586475", "#6f7c6b", "#F4CC8e", "#ae8954"
+];
+let schaalFactor = 4; // px per cm
+let dragSrcIndex = null;
+
+// ===== KLEUR UI =====
+function renderColorList() {
+  const list = document.getElementById('colorList');
+  list.innerHTML = '';
+  kleuren.forEach((kleur, i) => {
+    const row = document.createElement('div');
+    row.className = 'color-row';
+    row.draggable = true;
+    row.dataset.index = i;
+    row.addEventListener('dragstart', e => { dragSrcIndex = i; e.dataTransfer.effectAllowed = 'move'; });
+    row.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+    row.addEventListener('drop', e => {
+      e.preventDefault();
+      if (dragSrcIndex !== null && dragSrcIndex !== i) {
+        const arr = [...kleuren];
+        const [moved] = arr.splice(dragSrcIndex, 1);
+        arr.splice(i, 0, moved);
+        kleuren = arr;
+        renderColorList();
+        tekenQuilt();
+      }
+    });
+
+    const handle = document.createElement('span');
+    handle.className = 'drag-handle';
+    handle.textContent = '⠿';
+
+    const picker = document.createElement('input');
+    picker.type = 'color';
+    picker.value = toFullHex(kleur);
+    picker.addEventListener('input', () => {
+      kleuren[i] = picker.value;
+      hex.value = picker.value;
+      tekenQuilt();
+    });
+
+    const hex = document.createElement('input');
+    hex.type = 'text';
+    hex.className = 'hex-input';
+    hex.value = kleur;
+    hex.addEventListener('change', () => {
+      kleuren[i] = hex.value;
+      picker.value = toFullHex(hex.value);
+      tekenQuilt();
+    });
+
+    const del = document.createElement('button');
+    del.textContent = '✕';
+    del.title = 'Verwijder kleur';
+    del.addEventListener('click', () => {
+      if (kleuren.length > 2) { kleuren.splice(i, 1); renderColorList(); tekenQuilt(); }
+    });
+
+    row.append(handle, picker, hex, del);
+    list.appendChild(row);
+  });
+}
+
+function toFullHex(h) {
+  h = h.trim();
+  if (/^#[0-9a-fA-F]{3}$/.test(h)) {
+    return '#' + h[1]+h[1]+h[2]+h[2]+h[3]+h[3];
+  }
+  return h.length === 7 ? h : '#ca92a9';
+}
+
+function addColor() {
+  kleuren.push('#cccccc');
+  renderColorList();
+  tekenQuilt();
+}
+
+// ===== TOGGLE AUTO =====
+function toggleAuto() {
+  const auto = document.getElementById('gebruikAuto').checked;
+  document.getElementById('manualSection').style.display = auto ? 'none' : 'block';
+  tekenQuilt();
+}
+
+// ===== PARSE HELPERS =====
+function parseList(str) {
+  return str.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+}
+
+// ===== TEKEN QUILT =====
+function tekenQuilt() {
+  const stofbreedte = parseFloat(document.getElementById('stofbreedte').value) || 4;
+  const stoflengte = parseFloat(document.getElementById('stoflengte').value) || 90;
+  const aantalStroken = parseInt(document.getElementById('aantalStroken').value) || 21;
+  const aantalRingen = parseInt(document.getElementById('aantalRingen').value) || 1;
+  const naadtoeslag = parseFloat(document.getElementById('naadtoeslag').value) || 0.635;
+  const gebruikAuto = document.getElementById('gebruikAuto').checked;
+  const startV = parseInt(document.getElementById('startVerschuiving').value) || 0;
+
+  let breedtes = parseList(document.getElementById('breedtes').value);
+  if (breedtes.length === 0) breedtes = [5];
+
+  // Aanvullen tot stoflengte
+  let totaal = breedtes.reduce((a, b) => a + b, 0);
+  const origLen = breedtes.length;
+  while (totaal < stoflengte) {
+    breedtes.push(breedtes[breedtes.length - 1]);
+    totaal = breedtes.reduce((a, b) => a + b, 0);
+  }
+
+  // Verschuiving
+  let verschuivingBase = [];
+  if (!gebruikAuto) {
+    verschuivingBase = parseList(document.getElementById('verschuiving').value);
+    if (verschuivingBase.length === 0) verschuivingBase = [0];
+    verschuivingBase = verschuivingBase.map(x => x + startV);
+  }
+
+  const verschuivingen = breedtes.map((_, col) => {
+    if (gebruikAuto) {
+      return Math.round((Math.sin(col / breedtes.length * 2 * Math.PI) + 1) * (kleuren.length / 2));
+    } else {
+      return verschuivingBase[col % verschuivingBase.length];
+    }
+  });
+
+  // Canvas
+  const px = schaalFactor;
+  const canvasW = Math.round(totaal * px);
+  const hoogte_ring = aantalStroken * stofbreedte;
+  const canvasH = Math.round(aantalRingen * hoogte_ring * px);
+
+  const canvas = document.getElementById('quiltCanvas');
+  canvas.width = canvasW;
+  canvas.height = canvasH;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvasW, canvasH);
+
+  const stroken = kleuren.map((_, i) => kleuren[i % kleuren.length]);
+  let xpos = 0;
+
+  for (let col = 0; col < breedtes.length; col++) {
+    const bw = breedtes[col];
+    const shift = verschuivingen[col];
+    for (let ring = 0; ring < aantalRingen; ring++) {
+      for (let i = 0; i < aantalStroken; i++) {
+        const kleurShift = kleuren[((i - shift) % kleuren.length + kleuren.length) % kleuren.length];
+        const y = (ring * hoogte_ring + i * stofbreedte) * px;
+        ctx.fillStyle = kleurShift;
+        ctx.fillRect(Math.round(xpos * px), Math.round(y), Math.ceil(bw * px), Math.ceil(stofbreedte * px));
+        ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(Math.round(xpos * px) + 0.25, Math.round(y) + 0.25, Math.ceil(bw * px) - 0.5, Math.ceil(stofbreedte * px) - 0.5);
+      }
+    }
+    xpos += bw;
+  }
+
+  // Stats
+  const blok_breedtes_naad = breedtes.map(bw => bw - 2 * naadtoeslag);
+  const totale_breedte_naad = blok_breedtes_naad.reduce((a, b) => a + b, 0);
+  const blok_hoogte_naad = stofbreedte - 2 * naadtoeslag;
+  const totale_hoogte_naad = aantalRingen * aantalStroken * blok_hoogte_naad;
+
+  document.getElementById('statsBar').innerHTML = `
+    <span>Kolommen: <strong>${breedtes.length}</strong></span>
+    <span>Breedte na naadtoeslag: <strong>${totale_breedte_naad.toFixed(1)} cm</strong></span>
+    <span>Hoogte na naadtoeslag: <strong>${totale_hoogte_naad.toFixed(1)} cm</strong></span>
+    <span>Kleuren: <strong>${kleuren.length}</strong></span>
+  `;
+}
+
+// ===== ZOOM =====
+function zoom(delta) {
+  schaalFactor = Math.max(1, Math.min(20, schaalFactor + delta * schaalFactor));
+  document.getElementById('zoomInfo').textContent = Math.round(schaalFactor / 4 * 100) + '%';
+  tekenQuilt();
+}
+function resetZoom() {
+  schaalFactor = 4;
+  document.getElementById('zoomInfo').textContent = '100%';
+  tekenQuilt();
+}
+
+// ===== DOWNLOAD =====
+function downloadPNG() {
+  const canvas = document.getElementById('quiltCanvas');
+  const link = document.createElement('a');
+  link.download = 'bargello_quilt.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// ===== INIT =====
+renderColorList();
+tekenQuilt();
+
+// Auto-herteken bij Enter in velden
+document.querySelectorAll('input[type="number"], textarea').forEach(el => {
+  el.addEventListener('change', tekenQuilt);
+});
+</script>
+</body>
+</html>
